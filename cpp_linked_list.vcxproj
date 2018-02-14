@@ -11,34 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="mudff_packzlib.cpp" />
-    <ClCompile Include="zopfli\blocksplitter.c" />
-    <ClCompile Include="zopfli\cache.c" />
-    <ClCompile Include="zopfli\deflate.c" />
-    <ClCompile Include="zopfli\gzip_container.c" />
-    <ClCompile Include="zopfli\hash.c" />
-    <ClCompile Include="zopfli\katajainen.c" />
-    <ClCompile Include="zopfli\lz77.c" />
-    <ClCompile Include="zopfli\squeeze.c" />
-    <ClCompile Include="zopfli\tree.c" />
-    <ClCompile Include="zopfli\util.c" />
-    <ClCompile Include="zopfli\zlib_container.c" />
-    <ClCompile Include="zopfli\zopfli_lib.c" />
+    <ClCompile Include="7z\LzFind.c" />
+    <ClCompile Include="7z\LzmaDecodeSize_2.c" />
+    <ClCompile Include="7z\LzmaEnc.c" />
+    <ClCompile Include="entropy\lzdatagen.c" />
+    <ClCompile Include="entropy\pcg_basic.c" />
+    <ClCompile Include="mudff_packlzma.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="7z\LzFind.h" />
+    <ClInclude Include="7z\LzHash.h" />
+    <ClInclude Include="7z\LzmaEnc.h" />
+    <ClInclude Include="entropy\lzdatagen.h" />
+    <ClInclude Include="entropy\pcg_basic.h" />
     <ClInclude Include="types.hpp" />
-    <ClInclude Include="zopfli\blocksplitter.h" />
-    <ClInclude Include="zopfli\cache.h" />
-    <ClInclude Include="zopfli\deflate.h" />
-    <ClInclude Include="zopfli\gzip_container.h" />
-    <ClInclude Include="zopfli\hash.h" />
-    <ClInclude Include="zopfli\katajainen.h" />
-    <ClInclude Include="zopfli\lz77.h" />
-    <ClInclude Include="zopfli\squeeze.h" />
-    <ClInclude Include="zopfli\tree.h" />
-    <ClInclude Include="zopfli\util.h" />
-    <ClInclude Include="zopfli\zlib_container.h" />
-    <ClInclude Include="zopfli\zopfli.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0A5700B5-3CA3-43C1-9679-2F34B7BB124E}</ProjectGuid>
@@ -88,7 +74,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <Optimization>Full</Optimization>
+      <Optimization>MinSpace</Optimization>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
@@ -107,6 +93,7 @@
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <OmitFramePointers>false</OmitFramePointers>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
     </ClCompile>
     <Link>
       <OutputFile>mudff.exe</OutputFile>
@@ -146,6 +133,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CallingConvention>Cdecl</CallingConvention>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <OutputFile>mudff.exe</OutputFile>

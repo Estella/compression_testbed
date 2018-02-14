@@ -20,26 +20,7 @@ typedef struct _CRangeDecoder
 #define RC_FLUSH_VAR rd->Range = range; rd->Code = code;
 #define RC_NORMALIZE if (range < kTopValue) { range <<= 8; code = (code << 8) | ReadByte; }
 
-UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder *rd, int numTotalBits)
-{
-  RC_INIT_VAR
-  UInt32 result = 0;
-  int i;
-  for (i = numTotalBits; i != 0; i--)
-  {
-    /* UInt32 t; */
-    range >>= 1;
-    result <<= 1;
-    if (code >= range)
-    {
-      code -= range;
-      result |= 1;
-    }
-    RC_NORMALIZE
-  }
-  RC_FLUSH_VAR
-  return result;
-}
+
 
 int RangeDecoderBitDecode(CProb *prob, CRangeDecoder *rd)
 {
@@ -74,39 +55,7 @@ int RangeDecoderBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder *rd, in
 	  mi = (mi << 1) + bit;
 	  symbol |= (bit << i);
   }
-  if (reverse_bit)return symbol;
-  return mi - (1 << numLevels);
-}
-
-Byte LzmaLiteralDecodeMatch(CProb *probs, CRangeDecoder *rd, Byte matchByte, int decodematch)
-{ 
-  int symbol = 1;
-  do
-  {
-	  if (!decodematch)
-	  {
-		  symbol = (symbol + symbol) | RangeDecoderBitDecode(probs + symbol, rd);
-	  }
-	  else
-	  {
-		  int bit;
-		  int matchBit = (matchByte >> 7) & 1;
-		  matchByte <<= 1;
-		  bit = RangeDecoderBitDecode(probs + 0x100 + (matchBit << 8) + symbol, rd);
-		  symbol = (symbol << 1) | bit;
-		  if (matchBit != bit)
-		  {
-			  while (symbol < 0x100)
-			  {
-				  symbol = (symbol + symbol) | RangeDecoderBitDecode(probs + symbol, rd);
-			  }
-			  break;
-		  }
-	  }
-    
-  }
-  while (symbol < 0x100);
-  return symbol;
+  return reverse_bit ? symbol : mi - (1 << numLevels);
 }
 
 #define kNumPosBitsMax 4
@@ -182,14 +131,14 @@ void LzmaDecode(unsigned char* workmem,
     const unsigned char *inStream, SizeT inSize,
     unsigned char *outStream, SizeT outSize)
 {
-  CProb *workmem_p = workmem;
+  CProb *workmem_p = (CProb*)workmem;
   SizeT nowPos = 0;
   Byte previousByte = 0;
   CRangeDecoder rd;
   UInt32 distance;
   int state = 0;
   UInt32 rep0 = 1, rep1 = 1, rep2 = 1, rep3 = 1;
-  int len = 0;
+  int len;
   int posSlot;
   int i;
   for (i = 0; i < numProbs; i++)workmem_p[i] = kBitModelTotal >> 1;
@@ -198,6 +147,8 @@ void LzmaDecode(unsigned char* workmem,
   rd.Range = (0xFFFFFFFF);
   for (i = 0; i < 5; i++)
   rd.Code = (rd.Code << 8) | (*rd.Buffer++);
+
+
   while(nowPos < outSize)
   {
 	if (RangeDecoderBitDecode(workmem_p + IsMatch + (state << kNumPosBitsMax) + (nowPos& posStateMask), &rd) == 0)
@@ -208,12 +159,25 @@ void LzmaDecode(unsigned char* workmem,
         )
         & literalPosMask) << lc) + (previousByte >> (8 - lc))));
 
-      if (state >= kNumLitStates)
-      {
-        previousByte = LzmaLiteralDecodeMatch(probs, &rd, outStream[nowPos - rep0],1);
-      }
-      else
-	  previousByte = LzmaLiteralDecodeMatch(probs, &rd, 0,0);
+	  int symbol = 1;
+	  Byte matchByte = (state >= kNumLitStates) ? outStream[nowPos - rep0] : 0;
+	  if ((state < kNumLitStates))goto symbol_dec;
+	  while (symbol < 0x100)
+	  {
+		  int matchBit = (matchByte >> 7) & 1;
+		  matchByte <<= 1;
+		  int bit = RangeDecoderBitDecode(probs + 0x100 + (matchBit << 8) + symbol, &rd);
+		  symbol = (symbol << 1) | bit;
+		  if (matchBit != bit)
+		  {
+			  symbol_dec:
+			  while (symbol < 0x100){
+			  symbol = (symbol << 1) | RangeDecoderBitDecode(probs + symbol, &rd);
+			  }
+			  break;
+		  }
+	  }
+	  previousByte = symbol;
       outStream[nowPos++] = previousByte;
       if (state < 4) state = 0;
       else if (state < 10) state -= 3;
@@ -277,8 +241,21 @@ void LzmaDecode(unsigned char* workmem,
           }
           else
           {
-            rep0 += RangeDecoderDecodeDirectBits(&rd, 
-                numDirectBits - kNumAlignBits) << kNumAlignBits;
+
+				  UInt32 result = 0;
+				  numDirectBits -= kNumAlignBits;
+				  do
+				  { /* L440 */
+					  rd.Range >>= 1;
+					  result <<= 1;
+					  if (rd.Code >= rd.Range)
+					  {
+						  rd.Code -= rd.Range;
+						  result |= 1;
+					  }
+					  if (rd.Range < kTopValue) { rd.Range <<= 8; rd.Code = (rd.Code << 8) | (*rd.Buffer++); }
+				  } while (--numDirectBits != 0);
+			rep0+=(result << kNumAlignBits);
 			rep0 += RangeDecoderBitTreeDecode(workmem_p + Align, kNumAlignBits, &rd,1);
           }
         }
@@ -287,11 +264,12 @@ void LzmaDecode(unsigned char* workmem,
 		 ++rep0;
       }
       len += kMatchMinLen;
-      do
-      {
-        previousByte = outStream[nowPos - rep0];
+      
+	  do
+      {    
+		previousByte = outStream[nowPos - rep0];
         len--;
-        outStream[nowPos++] = previousByte;
+       outStream[nowPos++] = previousByte;
       }
 	  while (len != 0);
     }

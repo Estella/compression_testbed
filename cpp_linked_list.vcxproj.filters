@@ -1,86 +1,47 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="mudff_packzlib.cpp" />
-    <ClCompile Include="zopfli\blocksplitter.c">
-      <Filter>deflate</Filter>
+    <ClCompile Include="mudff_packlzma.cpp" />
+    <ClCompile Include="7z\LzFind.c">
+      <Filter>lzma</Filter>
     </ClCompile>
-    <ClCompile Include="zopfli\cache.c">
-      <Filter>deflate</Filter>
+    <ClCompile Include="7z\LzmaEnc.c">
+      <Filter>lzma</Filter>
     </ClCompile>
-    <ClCompile Include="zopfli\deflate.c">
-      <Filter>deflate</Filter>
+    <ClCompile Include="entropy\lzdatagen.c">
+      <Filter>entropy</Filter>
     </ClCompile>
-    <ClCompile Include="zopfli\gzip_container.c">
-      <Filter>deflate</Filter>
+    <ClCompile Include="entropy\pcg_basic.c">
+      <Filter>entropy</Filter>
     </ClCompile>
-    <ClCompile Include="zopfli\hash.c">
-      <Filter>deflate</Filter>
-    </ClCompile>
-    <ClCompile Include="zopfli\katajainen.c">
-      <Filter>deflate</Filter>
-    </ClCompile>
-    <ClCompile Include="zopfli\lz77.c">
-      <Filter>deflate</Filter>
-    </ClCompile>
-    <ClCompile Include="zopfli\squeeze.c">
-      <Filter>deflate</Filter>
-    </ClCompile>
-    <ClCompile Include="zopfli\tree.c">
-      <Filter>deflate</Filter>
-    </ClCompile>
-    <ClCompile Include="zopfli\util.c">
-      <Filter>deflate</Filter>
-    </ClCompile>
-    <ClCompile Include="zopfli\zlib_container.c">
-      <Filter>deflate</Filter>
-    </ClCompile>
-    <ClCompile Include="zopfli\zopfli_lib.c">
-      <Filter>deflate</Filter>
+    <ClCompile Include="7z\LzmaDecodeSize_2.c">
+      <Filter>lzma</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.hpp" />
-    <ClInclude Include="zopfli\blocksplitter.h">
-      <Filter>deflate</Filter>
+    <ClInclude Include="7z\LzFind.h">
+      <Filter>lzma</Filter>
     </ClInclude>
-    <ClInclude Include="zopfli\cache.h">
-      <Filter>deflate</Filter>
+    <ClInclude Include="7z\LzHash.h">
+      <Filter>lzma</Filter>
     </ClInclude>
-    <ClInclude Include="zopfli\deflate.h">
-      <Filter>deflate</Filter>
+    <ClInclude Include="7z\LzmaEnc.h">
+      <Filter>lzma</Filter>
     </ClInclude>
-    <ClInclude Include="zopfli\gzip_container.h">
-      <Filter>deflate</Filter>
+    <ClInclude Include="entropy\lzdatagen.h">
+      <Filter>entropy</Filter>
     </ClInclude>
-    <ClInclude Include="zopfli\hash.h">
-      <Filter>deflate</Filter>
-    </ClInclude>
-    <ClInclude Include="zopfli\katajainen.h">
-      <Filter>deflate</Filter>
-    </ClInclude>
-    <ClInclude Include="zopfli\lz77.h">
-      <Filter>deflate</Filter>
-    </ClInclude>
-    <ClInclude Include="zopfli\squeeze.h">
-      <Filter>deflate</Filter>
-    </ClInclude>
-    <ClInclude Include="zopfli\tree.h">
-      <Filter>deflate</Filter>
-    </ClInclude>
-    <ClInclude Include="zopfli\util.h">
-      <Filter>deflate</Filter>
-    </ClInclude>
-    <ClInclude Include="zopfli\zlib_container.h">
-      <Filter>deflate</Filter>
-    </ClInclude>
-    <ClInclude Include="zopfli\zopfli.h">
-      <Filter>deflate</Filter>
+    <ClInclude Include="entropy\pcg_basic.h">
+      <Filter>entropy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="deflate">
-      <UniqueIdentifier>{c04bc076-5197-422e-9b03-7b3733abb8f0}</UniqueIdentifier>
+    <Filter Include="lzma">
+      <UniqueIdentifier>{3b06fe43-775c-4d4c-a334-45f6598b5050}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="entropy">
+      <UniqueIdentifier>{81d1cfee-3d44-4451-8d1b-af877d56e600}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
