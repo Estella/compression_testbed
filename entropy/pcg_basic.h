@@ -31,7 +31,7 @@
 #ifndef PCG_BASIC_H_INCLUDED
 #define PCG_BASIC_H_INCLUDED 1
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #if __cplusplus
 extern "C" {

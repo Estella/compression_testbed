@@ -97,7 +97,7 @@ extern "C" DWORD _stdcall get_lzmadepackerptr();
 #define BLOCK_SIZE (1024 * 1024 * 2)
 
 extern "C" { void LzmaDecode(UInt16* workmem,
-	const unsigned char *inStream, SizeT inSize,
+	const unsigned char *inStream,
 	unsigned char *outStream, SizeT outSize);
 }
 int main(int argc, char *argv[]) {
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 	PVOID testmem = (unsigned char*)malloc(original_sz);
 	unsigned char* workmem = (unsigned char*)malloc(0xC4000);
 	int result;
-	LzmaDecode((UInt16*)workmem, compressed_data + LZMA_PROPS_SIZE, (SizeT)compressed - LZMA_PROPS_SIZE, (unsigned char*)testmem, (SizeT)original_sz);
+	LzmaDecode((UInt16*)workmem, compressed_data + LZMA_PROPS_SIZE, (unsigned char*)testmem, (SizeT)original_sz);
 	DWORD adler2 = adler32((unsigned char*)testmem, original_sz);
 	if (adler1 != adler2)printf("File not equal\n");
 	else printf("File equal\n");

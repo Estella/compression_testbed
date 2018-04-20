@@ -14,7 +14,7 @@
     <ClCompile Include="entropy\pcg_basic.c">
       <Filter>entropy</Filter>
     </ClCompile>
-    <ClCompile Include="7z\LzmaDecodeSize_2.c">
+    <ClCompile Include="7z\LzmaDecodeSize.c">
       <Filter>lzma</Filter>
     </ClCompile>
   </ItemGroup>

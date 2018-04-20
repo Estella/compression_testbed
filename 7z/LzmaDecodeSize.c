@@ -127,31 +127,30 @@ StopCompilingDueBUG
 
 
 
-void LzmaDecode(unsigned char* workmem,
-    const unsigned char *inStream, SizeT inSize,
+void LzmaDecode(unsigned short* workmem_p,
+    const unsigned char *inStream,
     unsigned char *outStream, SizeT outSize)
 {
-  CProb *workmem_p = (CProb*)workmem;
   SizeT nowPos = 0;
   Byte previousByte = 0;
   CRangeDecoder rd;
-  UInt32 distance;
-  int state = 0;
   UInt32 rep0 = 1, rep1 = 1, rep2 = 1, rep3 = 1;
   int len;
-  int posSlot;
-  int i;
-  for (i = 0; i < numProbs; i++)workmem_p[i] = kBitModelTotal >> 1;
+  int distance_posslot;
+  int iter_state;
   rd.Buffer = inStream;
   rd.Code = 0;
   rd.Range = (0xFFFFFFFF);
-  for (i = 0; i < 5; i++)
-  rd.Code = (rd.Code << 8) | (*rd.Buffer++);
-
+  for (iter_state = 0; iter_state < numProbs; iter_state++)
+  {
+	  if(iter_state < 5)rd.Code = (rd.Code << 8) | (*rd.Buffer++);
+	  workmem_p[iter_state] = kBitModelTotal >> 1;
+  }
+  iter_state=0;
 
   while(nowPos < outSize)
   {
-	if (RangeDecoderBitDecode(workmem_p + IsMatch + (state << kNumPosBitsMax) + (nowPos& posStateMask), &rd) == 0)
+	if (RangeDecoderBitDecode(workmem_p + IsMatch + (iter_state << kNumPosBitsMax) + (nowPos& posStateMask), &rd) == 0)
     {
       CProb *probs = workmem_p + Literal + (LZMA_LIT_SIZE * 
         (((
@@ -159,39 +158,43 @@ void LzmaDecode(unsigned char* workmem,
         )
         & literalPosMask) << lc) + (previousByte >> (8 - lc))));
 
-	  int symbol = 1;
-	  Byte matchByte = (state >= kNumLitStates) ? outStream[nowPos - rep0] : 0;
-	  if ((state < kNumLitStates))goto symbol_dec;
-	  while (symbol < 0x100)
+	  int bit;
+	  Byte matchByte = (iter_state >= kNumLitStates) ? outStream[nowPos - rep0] : 0;
+	  distance_posslot = 1;
+	  if ((iter_state < kNumLitStates))goto symbol_dec;
+	  while (distance_posslot < 0x100)
 	  {
-		  int matchBit = (matchByte >> 7) & 1;
-		  matchByte <<= 1;
-		  int bit = RangeDecoderBitDecode(probs + 0x100 + (matchBit << 8) + symbol, &rd);
-		  symbol = (symbol << 1) | bit;
-		  if (matchBit != bit)
 		  {
+			  int matchBit = (matchByte >> 7) & 1;
+			  matchByte <<= 1;
+
+			  bit = RangeDecoderBitDecode(probs + 0x100 + (matchBit << 8) + distance_posslot, &rd);
+			  distance_posslot = (distance_posslot << 1) | bit;
+			  if (matchBit != bit)
+			  {
 			  symbol_dec:
-			  while (symbol < 0x100){
-			  symbol = (symbol << 1) | RangeDecoderBitDecode(probs + symbol, &rd);
+				  while (distance_posslot < 0x100) {
+					  distance_posslot = (distance_posslot << 1) | RangeDecoderBitDecode(probs + distance_posslot, &rd);
+				  }
+				  break;
 			  }
-			  break;
 		  }
 	  }
-	  previousByte = symbol;
+	  previousByte = distance_posslot;
       outStream[nowPos++] = previousByte;
-      if (state < 4) state = 0;
-      else if (state < 10) state -= 3;
-      else state -= 6;
+      if (iter_state < 4) iter_state = 0;
+      else if (iter_state < 10) iter_state -= 3;
+      else iter_state -= 6;
     }
     else             
     {
-      if (RangeDecoderBitDecode(workmem_p + IsRep + state, &rd) == 1)
+      if (RangeDecoderBitDecode(workmem_p + IsRep + iter_state, &rd) == 1)
       {
-        if (RangeDecoderBitDecode(workmem_p + IsRepG0 + state, &rd) == 0)
+        if (RangeDecoderBitDecode(workmem_p + IsRepG0 + iter_state, &rd) == 0)
         {
-			if (RangeDecoderBitDecode(workmem_p + IsRep0Long + (state << kNumPosBitsMax) + (nowPos& posStateMask), &rd) == 0)
+			if (RangeDecoderBitDecode(workmem_p + IsRep0Long + (iter_state << kNumPosBitsMax) + (nowPos& posStateMask), &rd) == 0)
           {
-            state = state < 7 ? 9 : 11;
+            iter_state = iter_state < 7 ? 9 : 11;
             previousByte = outStream[nowPos - rep0];
             outStream[nowPos++] = previousByte;
             continue;
@@ -200,24 +203,24 @@ void LzmaDecode(unsigned char* workmem,
         else
         {
          
-          if(RangeDecoderBitDecode(workmem_p + IsRepG1 + state, &rd) == 0)
-            distance = rep1;
+          if(RangeDecoderBitDecode(workmem_p + IsRepG1 + iter_state, &rd) == 0)
+              distance_posslot = rep1;
           else 
           {
-            if(RangeDecoderBitDecode(workmem_p + IsRepG2 + state, &rd) == 0)
-              distance = rep2;
+            if(RangeDecoderBitDecode(workmem_p + IsRepG2 + iter_state, &rd) == 0)
+                distance_posslot = rep2;
             else
             {
-              distance = rep3;
+                distance_posslot = rep3;
               rep3 = rep2;
             }
             rep2 = rep1;
           }
           rep1 = rep0;
-          rep0 = distance;
+          rep0 = distance_posslot;
         }
 		len = LzmaLenDecode(workmem_p + RepLenCoder, &rd, (nowPos& posStateMask));
-        state = state < 7 ? 8 : 11;
+        iter_state = iter_state < 7 ? 8 : 11;
       }
       else
       {
@@ -225,42 +228,42 @@ void LzmaDecode(unsigned char* workmem,
         rep3 = rep2;
         rep2 = rep1;
         rep1 = rep0;
-        state = state < 7 ? 7 : 10;
+        iter_state = iter_state < 7 ? 7 : 10;
 		len = LzmaLenDecode(workmem_p + LenCoder, &rd, (nowPos& posStateMask));
-        posSlot = RangeDecoderBitTreeDecode(workmem_p + PosSlot +
+        distance_posslot = RangeDecoderBitTreeDecode(workmem_p + PosSlot +
             ((len < kNumLenToPosStates ? len : kNumLenToPosStates - 1) << 
             kNumPosSlotBits), kNumPosSlotBits, &rd,0);
-        if (posSlot >= kStartPosModelIndex)
+        if (distance_posslot >= kStartPosModelIndex)
         {
-          int numDirectBits = ((posSlot >> 1) - 1);
-          rep0 = ((2 | ((UInt32)posSlot & 1)) << numDirectBits);
-          if (posSlot < kEndPosModelIndex)
+          int numDirectBits = ((distance_posslot >> 1) - 1);
+          rep0 = ((2 | ((UInt32)distance_posslot & 1)) << numDirectBits);
+          if (distance_posslot < kEndPosModelIndex)
           {
 			  rep0 += RangeDecoderBitTreeDecode(
-                workmem_p + SpecPos + rep0 - posSlot - 1, numDirectBits, &rd,1);
+                workmem_p + SpecPos + rep0 - distance_posslot - 1, numDirectBits, &rd,1);
           }
           else
           {
 
-				  UInt32 result = 0;
+			  distance_posslot = 0;
 				  numDirectBits -= kNumAlignBits;
 				  do
 				  { /* L440 */
 					  rd.Range >>= 1;
-					  result <<= 1;
+					  distance_posslot <<= 1;
 					  if (rd.Code >= rd.Range)
 					  {
 						  rd.Code -= rd.Range;
-						  result |= 1;
+						  distance_posslot |= 1;
 					  }
 					  if (rd.Range < kTopValue) { rd.Range <<= 8; rd.Code = (rd.Code << 8) | (*rd.Buffer++); }
 				  } while (--numDirectBits != 0);
-			rep0+=(result << kNumAlignBits);
+			rep0+=(distance_posslot << kNumAlignBits);
 			rep0 += RangeDecoderBitTreeDecode(workmem_p + Align, kNumAlignBits, &rd,1);
           }
         }
         else
-          rep0 = posSlot;
+          rep0 = distance_posslot;
 		 ++rep0;
       }
       len += kMatchMinLen;
